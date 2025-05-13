@@ -1,11 +1,10 @@
-
 import React, { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { packages, places, guides, destinations } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon, Clock, MapPin, DollarSign, Star, Languages, CalendarDays, Users, Award } from 'lucide-react';
-import { useToast } from '@/components/ui/sonner';
+import { toast } from '@/components/ui/sonner';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -14,7 +13,6 @@ import { cn } from "@/lib/utils";
 const PackageDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated } = useAuth();
-  const toast = useToast();
 
   const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date>();
