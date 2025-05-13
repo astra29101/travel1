@@ -1,139 +1,139 @@
 
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Lock, Mail } from 'lucide-react';
+import { UserRound, Lock, Mail, MapPin, Calendar } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
+import { demoCredentials } from '@/App';
 
 const Login: React.FC = () => {
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login, signup } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-
+  const [activeTab, setActiveTab] = useState("login");
+  
   // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-
-  // Signup form state
-  const [name, setName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [age, setAge] = useState('');
-  const [location1, setLocation1] = useState('');
-  const [signupError, setSignupError] = useState('');
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  
+  // Register form state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [age, setAge] = useState("");
+  const [location, setLocation] = useState("");
+  
+  // Loading state
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError('');
-    
-    if (!loginEmail || !loginPassword) {
-      setLoginError('Please fill in all fields');
-      return;
-    }
-    
     setIsLoading(true);
+    
     try {
-      const success = await login(loginEmail, loginPassword);
-      if (success) {
-        navigate(-1); // Go back to the previous page
+      // Check for demo user credentials
+      if (
+        (loginEmail === demoCredentials.user.email && loginPassword === demoCredentials.user.password) ||
+        (loginEmail === demoCredentials.admin.email && loginPassword === demoCredentials.admin.password)
+      ) {
+        // Get the role based on the email
+        const role = loginEmail === demoCredentials.admin.email ? 'admin' : 'user';
+        
+        // Login the user
+        await login(loginEmail, role);
+        toast.success('Login successful!');
+        navigate(-1); // Go back to previous page
+      } else {
+        // Show error if credentials don't match
+        toast.error('Invalid email or password');
       }
+    } catch (error) {
+      toast.error('Failed to login');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSignupError('');
-    
-    if (!name || !signupEmail || !signupPassword || !confirmPassword) {
-      setSignupError('Please fill in all required fields');
-      return;
-    }
-    
-    if (signupPassword !== confirmPassword) {
-      setSignupError('Passwords do not match');
-      return;
-    }
-    
     setIsLoading(true);
+    
     try {
-      const success = await signup(name, signupEmail, signupPassword);
-      if (success) {
-        navigate(-1); // Go back to the previous page
-      }
+      // In a real app, we would send this data to an API
+      toast.success('Account created successfully!');
+      setActiveTab("login");
+      
+      // Pre-fill login fields with registration data
+      setLoginEmail(email);
+      setLoginPassword(password);
+    } catch (error) {
+      toast.error('Failed to create account');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fillDemoCredentials = (type: 'user' | 'admin') => {
+    setLoginEmail(demoCredentials[type].email);
+    setLoginPassword(demoCredentials[type].password);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md">
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Signup</TabsTrigger>
-          </TabsList>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full">
+        <Card className="w-full shadow-lg bg-white">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Wanderlust</CardTitle>
+            <CardDescription>Login to access your account or create a new one</CardDescription>
+          </CardHeader>
           
-          {/* Login Tab */}
-          <TabsContent value="login">
-            <Card>
-              <CardHeader>
-                <CardTitle>Login</CardTitle>
-                <CardDescription>
-                  Welcome back! Enter your credentials to access your account
-                </CardDescription>
-              </CardHeader>
+          <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4 mx-6">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4">
-                  {loginError && (
-                    <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
-                      {loginError}
-                    </div>
-                  )}
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input 
-                        id="email"
+                        id="email" 
                         type="email" 
-                        placeholder="you@example.com" 
+                        placeholder="your@email.com"
+                        className="pl-10"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        className="pl-10"
+                        required
                       />
                     </div>
                   </div>
+                  
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <a href="#" className="text-xs text-travel-teal hover:underline">
-                        Forgot password?
-                      </a>
-                    </div>
+                    <Label htmlFor="password">Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input 
-                        id="password"
-                        type="password" 
-                        placeholder="••••••••" 
+                        id="password" 
+                        type="password"
+                        placeholder="••••••••"
+                        className="pl-10"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className="pl-10"
+                        required
                       />
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter>
+                
+                <CardFooter className="flex flex-col space-y-4">
                   <Button 
                     type="submit" 
                     className="w-full bg-travel-teal hover:bg-travel-teal/90"
@@ -141,102 +141,123 @@ const Login: React.FC = () => {
                   >
                     {isLoading ? 'Logging in...' : 'Login'}
                   </Button>
+                  
+                  {/* Demo Credentials Buttons */}
+                  <div className="w-full space-y-2">
+                    <div className="text-center text-sm text-gray-500 font-medium mb-2">Demo Credentials</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => fillDemoCredentials('user')}
+                      >
+                        <UserRound className="h-4 w-4 mr-2" />
+                        User Login
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => fillDemoCredentials('admin')}
+                      >
+                        <UserRound className="h-4 w-4 mr-2" />
+                        Admin Login
+                      </Button>
+                    </div>
+                    <div className="text-xs text-center text-gray-500 mt-2">
+                      <p><strong>User:</strong> {demoCredentials.user.email} / {demoCredentials.user.password}</p>
+                      <p><strong>Admin:</strong> {demoCredentials.admin.email} / {demoCredentials.admin.password}</p>
+                    </div>
+                  </div>
                 </CardFooter>
               </form>
-            </Card>
-          </TabsContent>
-          
-          {/* Signup Tab */}
-          <TabsContent value="signup">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Account</CardTitle>
-                <CardDescription>
-                  Join Wanderlust to start planning your adventures
-                </CardDescription>
-              </CardHeader>
-              <form onSubmit={handleSignup}>
+            </TabsContent>
+            
+            <TabsContent value="register">
+              <form onSubmit={handleRegister}>
                 <CardContent className="space-y-4">
-                  {signupError && (
-                    <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
-                      {signupError}
-                    </div>
-                  )}
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
+                    <Label htmlFor="name">Full Name</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <UserRound className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input 
-                        id="name"
-                        placeholder="John Doe" 
+                        id="name" 
+                        placeholder="John Doe"
+                        className="pl-10"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="pl-10"
+                        required
                       />
                     </div>
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email *</Label>
+                    <Label htmlFor="register-email">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input 
-                        id="signup-email"
+                        id="register-email" 
                         type="email" 
-                        placeholder="you@example.com" 
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
+                        placeholder="your@email.com"
                         className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password *</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input 
-                          id="signup-password"
-                          type="password" 
-                          placeholder="••••••••" 
-                          value={signupPassword}
-                          onChange={(e) => setSignupPassword(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm Password *</Label>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="register-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input 
-                        id="confirm-password"
-                        type="password" 
-                        placeholder="••••••••" 
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        id="register-password" 
+                        type="password"
+                        placeholder="••••••••"
+                        className="pl-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
                       />
                     </div>
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="age">Age</Label>
-                      <Input 
-                        id="age"
-                        type="number" 
-                        placeholder="25" 
-                        value={age}
-                        onChange={(e) => setAge(e.target.value)}
-                      />
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input 
+                          id="age" 
+                          type="number" 
+                          placeholder="25"
+                          className="pl-10"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="location">Location</Label>
-                      <Input 
-                        id="location"
-                        placeholder="City, Country" 
-                        value={location1}
-                        onChange={(e) => setLocation1(e.target.value)}
-                      />
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input 
+                          id="location" 
+                          placeholder="City, Country"
+                          className="pl-10"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
+                
                 <CardFooter>
                   <Button 
                     type="submit" 
@@ -247,9 +268,9 @@ const Login: React.FC = () => {
                   </Button>
                 </CardFooter>
               </form>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        </Card>
       </div>
     </div>
   );

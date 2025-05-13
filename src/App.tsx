@@ -17,6 +17,23 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Bookings from "./pages/Bookings";
 import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
+
+// Create demo credentials for the application
+export const demoCredentials = {
+  user: { 
+    email: "user@example.com", 
+    password: "password123",
+    name: "Demo User",
+    role: "user" 
+  },
+  admin: { 
+    email: "admin@example.com", 
+    password: "admin123",
+    name: "Admin User",
+    role: "admin"
+  }
+};
 
 const queryClient = new QueryClient();
 
@@ -38,6 +55,7 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/bookings" element={<Bookings />} />
+                <Route index element={<Index />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

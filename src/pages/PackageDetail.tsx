@@ -1,22 +1,23 @@
+
 import React, { useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { packages, places, guides, destinations } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, Clock, MapPin, DollarSign, Star, Languages, CalendarDays, Users, Award } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, DollarSign, Star, Languages, CalendarDays, Users, Award, ArrowLeft } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
 const PackageDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
   
   // Find the package and related data
   const packageItem = useMemo(() => {
@@ -38,6 +39,37 @@ const PackageDetail: React.FC = () => {
     return guides.filter(guide => guide.destinationId === packageItem.destinationId);
   }, [packageItem]);
 
+  // Calculate end date based on start date and package duration
+  const endDate = useMemo(() => {
+    if (!startDate || !packageItem) return undefined;
+    return addDays(new Date(startDate), packageItem.durationDays - 1);
+  }, [startDate, packageItem]);
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  const handleBooking = () => {
+    if (!isAuthenticated) {
+      toast('Please login to book this package');
+      // In a real app, we'd save the package in session/local storage
+      return;
+    }
+    
+    if (!startDate) {
+      toast('Please select your travel dates');
+      return;
+    }
+    
+    if (!selectedGuide) {
+      toast('Please select a guide');
+      return;
+    }
+    
+    // In a real app, we'd move to the booking confirmation page
+    toast.success('Package booked successfully!');
+  };
+
   if (!packageItem || !destination) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -51,27 +83,6 @@ const PackageDetail: React.FC = () => {
       </div>
     );
   }
-
-  const handleBooking = () => {
-    if (!isAuthenticated) {
-      toast('Please login to book this package');
-      // In a real app, we'd save the package in session/local storage
-      return;
-    }
-    
-    if (!startDate || !endDate) {
-      toast('Please select your travel dates');
-      return;
-    }
-    
-    if (!selectedGuide) {
-      toast('Please select a guide');
-      return;
-    }
-    
-    // In a real app, we'd move to the booking confirmation page
-    toast.success('Package booked successfully!');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -98,6 +109,16 @@ const PackageDetail: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Back navigation button */}
+        <Button 
+          variant="outline" 
+          className="absolute top-4 left-4 bg-white/80 hover:bg-white" 
+          onClick={handleGoBack}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
       </div>
 
       {/* Package Content */}
@@ -169,63 +190,50 @@ const PackageDetail: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
               <h2 className="text-xl font-bold mb-6">Book This Package</h2>
               
-              {/* Date Selection */}
+              {/* Date Selection - Only Start Date */}
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Select Travel Dates</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !startDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={startDate}
-                          onSelect={setStartDate}
-                          initialFocus
-                          disabled={(date) => date < new Date()}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !endDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={endDate}
-                          onSelect={setEndDate}
-                          initialFocus
-                          disabled={(date) => !startDate || date <= startDate}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                <h3 className="text-lg font-medium mb-2">Select Start Date</h3>
+                <div className="mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
+                        disabled={(date) => date < new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
+                
+                {startDate && (
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                    <div className="flex items-center">
+                      <CalendarDays size={16} className="text-travel-teal mr-2" />
+                      <div>
+                        <p className="text-sm font-medium">Trip Duration</p>
+                        <p className="text-xs text-gray-600">
+                          {format(startDate, "PPP")} - {endDate ? format(endDate, "PPP") : ""}
+                          <span className="ml-2 text-travel-teal">({packageItem.durationDays} days)</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Guide Selection */}
@@ -309,7 +317,7 @@ const PackageDetail: React.FC = () => {
               <Button 
                 onClick={handleBooking} 
                 className="w-full bg-travel-teal hover:bg-travel-teal/90"
-                disabled={!startDate || !endDate || !selectedGuide}
+                disabled={!startDate || !selectedGuide}
               >
                 {isAuthenticated ? 'Book Now' : 'Login to Book'}
               </Button>
